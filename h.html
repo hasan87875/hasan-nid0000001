@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>জাতীয় পরিচয়পত্র অনুসন্ধান</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Noto Sans Bengali', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .header {
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #2c3e50;
+            font-size: 24px;
+        }
+        .header p {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .search-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+        .input-group label {
+            font-size: 12px;
+            color: #34495e;
+            margin-bottom: 3px;
+            font-weight: bold;
+        }
+        .input-group input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .search-button {
+            padding: 10px 15px;
+            background-color: #2980b9;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .search-button:hover {
+            background-color: #3498db;
+        }
+        .search-button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        #loading-message {
+            display: none;
+            color: #3498db;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        #result-container {
+            display: none;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        #nid-card {
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 20px;
+            text-align: left;
+            position: relative; /* For the qr code positioning */
+        }
+
+        .nid-header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .nid-header h2 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        .nid-header p {
+            color: #555;
+            font-size: 14px;
+            margin-bottom: 0;
+        }
+
+        .photo-qr-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        .photo-container {
+            width: 120px;
+            height: 150px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .photo-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .qr-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 100px;
+            height: 100px;
+            border: 1px solid #eee;
+        }
+        .qr-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .nid-details-top {
+            flex-grow: 1;
+            padding-left: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .info-section {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #eee;
+        }
+        .info-section:last-child {
+            border-bottom: none;
+        }
+        .info-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+        .info-label {
+            width: 150px;
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+            text-align: left;
+        }
+        .info-value {
+            flex-grow: 1;
+            color: #555;
+            font-size: 14px;
+            text-align: left;
+        }
+
+        .download-button {
+            padding: 10px 15px;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 15px;
+        }
+        .download-button:hover {
+            background-color: #2ecc71;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 12px;
+            color: #777;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>জাতীয় পরিচয়পত্র অনুসন্ধান</h1>
+            <p>আপনার NID নম্বর এবং জন্মতারিখ দিয়ে তথ্য দেখুন ও ডাউনলোড করুন</p>
+        </div>
+
+        <div class="search-form">
+            <div class="input-group">
+                <label for="nid-input">NID নম্বর:</label>
+                <input type="text" id="nid-input" placeholder="উদাহরণ: 1453281295" required>
+            </div>
+            <div class="input-group">
+                <label for="dob-input">জন্মতারিখ (YYYY-MM-DD):</label>
+                <input type="date" id="dob-input" required>
+            </div>
+            <button class="search-button" id="search-btn">সার্চ করুন</button>
+        </div>
+
+        <div id="loading-message">
+            তথ্য লোড হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...
+        </div>
+
+        <div id="result-container">
+            <div id="nid-card">
+                <div class="nid-header">
+                    <h2>গণপ্রজাতন্ত্রী বাংলাদেশ সরকার</h2>
+                    <p>জাতীয় পরিচয়পত্র নিবন্ধন উইং (এনআইডিড)</p>
+                </div>
+                <div class="photo-qr-section">
+                    <div class="photo-container">
+                        <img id="nid-photo" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="NID Photo">
+                    </div>
+                    <div class="qr-container">
+                        <img id="nid-qr" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="QR Code">
+                    </div>
+                </div>
+                <div class="info-section">
+                    <div class="info-row">
+                        <span class="info-label">জাতীয় পরিচয়পত্র নম্বর:</span>
+                        <span id="nid-number" class="info-value"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">পিন নম্বর:</span>
+                        <span id="pin-number" class="info-value"></span>
+                    </div>
+                </div>
+                <div class="info-section">
+                    <div class="info-row">
+                        <span class="info-label">নাম (বাংলা):</span>
+                        <span id="name-bn" class="info-value"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">নাম (ইংরেজি):</span>
+                        <span id="name-en" class="info-value"></span>
+                    </div>
+                </div>
+                <div class="info-section">
+                    <div class="info-row">
+                        <span class="info-label">জন্ম তারিখ:</span>
+                        <span id="birth-date" class="info-value"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">পিতার নাম:</span>
+                        <span id="father-name" class="info-value"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">মাতার নাম:</span>
+                        <span id="mother-name" class="info-value"></span>
+                    </div>
+                </div>
+                <div class="info-section">
+                    <div class="info-row">
+                        <span class="info-label">বর্তমান ঠিকানা:</span>
+                        <span id="present-address" class="info-value"></span>
+                    </div>
+                </div>
+                <div class="info-section">
+                    <div class="info-row">
+                        <span class="info-label">স্থায়ী ঠিকানা:</span>
+                        <span id="permanent-address" class="info-value"></span>
+                    </div>
+                </div>
+                <div class="footer">
+                    <p>ইহা একটি সফটওয়্যার-জেনারেটেড অনুলিপি, বাংলাদেশ নির্বাচন কমিশন কর্তৃক প্রস্তুতকৃত।</p>
+                    <p>This is a Software Generated Report From Bangladesh Election Commission.</p>
+                </div>
+            </div>
+            <button class="download-button" id="download-btn">PDF ডাউনলোড করুন</button>
+        </div>
+    </div>
+
+    <script>
+        const nidInput = document.getElementById('nid-input');
+        const dobInput = document.getElementById('dob-input');
+        const searchBtn = document.getElementById('search-btn');
+        const loadingMessage = document.getElementById('loading-message');
+        const resultContainer = document.getElementById('result-container');
+        const nidCardDiv = document.getElementById('nid-card');
+        const downloadBtn = document.getElementById('download-btn');
+
+        // Information display elements
+        const nidNumberSpan = document.getElementById('nid-number');
+        const pinNumberSpan = document.getElementById('pin-number');
+        const nameBnSpan = document.getElementById('name-bn');
+        const nameEnSpan = document.getElementById('name-en');
+        const birthDateSpan = document.getElementById('birth-date');
+        const fatherNameSpan = document.getElementById('father-name');
+        const motherNameSpan = document.getElementById('mother-name');
+        const presentAddressSpan = document.getElementById('present-address');
+        const permanentAddressSpan = document.getElementById('permanent-address');
+        const nidPhotoImg = document.getElementById('nid-photo');
+        const nidQrImg = document.getElementById('nid-qr');
+
+        // API Key
+        const api_key = '1e0fc13be94e217f1ec34da77f2b4e83';
+
+        searchBtn.addEventListener('click', async () => {
+            const nid = nidInput.value.trim();
+            const dob = dobInput.value;
+
+            if (!nid || !dob) {
+                alert('অনুগ্রহ করে NID নম্বর এবং জন্মতারিখ উভয়ই পূরণ করুন।');
+                return;
+            }
+
+            loadingMessage.style.display = 'block';
+            resultContainer.style.display = 'none';
+            searchBtn.disabled = true;
+
+            const apiUrl = `https://unique-seba.com/api/servercopy2?api_key=${api_key}&nid=${nid}&dob=${dob}`;
+
+            try {
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+
+                if (data.status === 'success' && data.result) {
+                    displayResult(data.result);
+                    resultContainer.style.display = 'block';
+                } else {
+                    alert('কোনো তথ্য পাওয়া যায়নি। NID নম্বর বা জন্মতারিখ ভুল হতে পারে।');
+                    resultContainer.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                alert('তথ্য আনতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।');
+                resultContainer.style.display = 'none';
+            } finally {
+                loadingMessage.style.display = 'none';
+                searchBtn.disabled = false;
+            }
+        });
+
+        function displayResult(result) {
+            nidNumberSpan.textContent = result.national_id || 'N/A';
+            pinNumberSpan.textContent = result.pin || 'N/A';
+            nameBnSpan.textContent = result.name_bn || 'N/A';
+            nameEnSpan.textContent = result.name_en || 'N/A';
+            birthDateSpan.textContent = result.dob || 'N/A';
+            fatherNameSpan.textContent = result.father_bn || 'N/A';
+            motherNameSpan.textContent = result.mother_bn || 'N/A';
+            presentAddressSpan.textContent = result.present_address || 'N/A';
+            permanentAddressSpan.textContent = result.permanent_address || 'N/A';
+            nidPhotoImg.src = result.photo || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+            nidQrImg.src = result.qr_code || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+        }
+
+        downloadBtn.addEventListener('click', () => {
+            html2canvas(nidCardDiv, {
+                scale: 2 // Increase scale for better resolution in PDF
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const imgProps = pdf.getImageProperties(imgData);
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                pdf.save(`nid_info_${nidInput.value}.pdf`);
+            });
+        });
+    </script>
+
+</body>
+</html>
